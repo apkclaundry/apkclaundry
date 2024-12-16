@@ -5,6 +5,38 @@ import (
 	"net/http"
 )
 
+// EnableCORS menangani header CORS agar frontend dapat mengakses API
+func EnableCORS(next http.Handler) http.Handler {
+    return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+        origin := r.Header.Get("Origin")
+        
+        // Daftar origin yang diperbolehkan
+        allowedOrigins := map[string]bool{
+            "http://127.0.0.1:5500":                      true,
+            "https://proyek3-pos.github.io/laundrypos-fe": true,
+            "https://proyek3-pos.github.io/swagger":       true,
+            "https://apkclaundry.github.io/":          true,
+        }
+
+        // Periksa apakah origin dalam daftar yang diizinkan
+        if allowedOrigins[origin] {
+            w.Header().Set("Access-Control-Allow-Origin", origin)
+        }
+
+        w.Header().Set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
+        w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization")
+
+        // Tangani preflight request (OPTIONS)
+        if r.Method == http.MethodOptions {
+            w.WriteHeader(http.StatusOK)
+            return
+        }
+
+        // Lanjutkan ke handler berikutnya
+        next.ServeHTTP(w, r)
+    })
+}
+
 // AuthMiddleware validates JWT tokens
 func AuthMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {

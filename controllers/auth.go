@@ -10,8 +10,9 @@ import (
 	"apkclaundry/models"
 	"apkclaundry/utils"
 
-	"golang.org/x/crypto/bcrypt"
 	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/bson/primitive"
+	"golang.org/x/crypto/bcrypt"
 )
 
 // Register handles user registration
@@ -42,16 +43,20 @@ func Register(w http.ResponseWriter, r *http.Request) {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
+	// Insert user into the UserCollection
 	result, err := config.UserCollection.InsertOne(ctx, user)
 	if err != nil {
 		http.Error(w, `{"error": "Failed to create user"}`, http.StatusInternalServerError)
 		return
 	}
 
-	// Retrieve the inserted user including the new ID
-	err = config.UserCollection.FindOne(context.TODO(), bson.M{"_id": result.InsertedID}).Decode(&user)
+	// Assign generated ID to user
+	user.ID = result.InsertedID.(primitive.ObjectID).Hex()
+
+	// Insert user into the KaryawanCollection
+	_, err = config.EmployeeCollection.InsertOne(ctx, user)
 	if err != nil {
-		http.Error(w, `{"error": "Failed to retrieve user"}`, http.StatusInternalServerError)
+		http.Error(w, `{"error": "Failed to create karyawan"}`, http.StatusInternalServerError)
 		return
 	}
 
@@ -63,13 +68,14 @@ func Register(w http.ResponseWriter, r *http.Request) {
 			"role":       user.Role,
 			"phone":      user.Phone,
 			"address":    user.Address,
-			"hired_date": user.HiredDate.Format(time.RFC3339), // ISO 8601 date format
+			"hired_date": user.HiredDate.Format(time.RFC3339),
 		},
 	}
 
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(response)
 }
+
 
 
 // Login handles user authentication and JWT token generation
@@ -122,5 +128,153 @@ func Login(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json") // Set content type to JSON
 	// Return the response as JSON
 	json.NewEncoder(w).Encode(response)
+}
+
+// GetAllUsers mengambil semua data user
+func GetAllUsers(w http.ResponseWriter, r *http.Request) {
+	// Query semua user dari MongoDB
+	cursor, err := config.UserCollection.Find(context.TODO(), bson.M{})
+	if err != nil {
+		http.Error(w, "Gagal mengambil data user", http.StatusInternalServerError)
+		return
+	}
+	defer cursor.Close(context.TODO())
+
+	// Slice untuk menyimpan hasil query
+	var users []models.User
+	for cursor.Next(context.TODO()) {
+		var user models.User
+		if err := cursor.Decode(&user); err != nil {
+			http.Error(w, "Gagal membaca data user", http.StatusInternalServerError)
+			return
+		}
+		users = append(users, user)
+	}
+
+	// Periksa apakah ada user yang ditemukan
+	if len(users) == 0 {
+		http.Error(w, "Tidak ada user yang ditemukan", http.StatusNotFound)
+		return
+	}
+
+	// Kirim response dengan daftar user
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(users)
+}
+
+
+// GetUserByID mengambil data user berdasarkan ID
+func GetUserByID(w http.ResponseWriter, r *http.Request) {
+	// Ambil ID dari URL parameter
+	userID := r.URL.Query().Get("id")
+	if userID == "" {
+		http.Error(w, "ID tidak disediakan", http.StatusBadRequest)
+		return
+	}
+
+	// Convert ID menjadi ObjectID MongoDB
+	id, err := primitive.ObjectIDFromHex(userID)
+	if err != nil {
+		http.Error(w, "ID tidak valid", http.StatusBadRequest)
+		return
+	}
+
+	// Query MongoDB untuk mencari user berdasarkan ID
+	var user models.User
+	err = config.UserCollection.FindOne(context.TODO(), bson.M{"_id": id}).Decode(&user)
+	if err != nil {
+		http.Error(w, "User tidak ditemukan", http.StatusNotFound)
+		return
+	}
+
+	// Kirim response user yang ditemukan
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(user)
+}
+
+// UpdateUser memperbarui data user berdasarkan ID
+func UpdateUser(w http.ResponseWriter, r *http.Request) {
+	// Ambil ID dari URL parameter
+	userID := r.URL.Query().Get("id")
+	if userID == "" {
+		http.Error(w, "ID tidak disediakan", http.StatusBadRequest)
+		return
+	}
+
+	// Convert ID menjadi ObjectID MongoDB
+	id, err := primitive.ObjectIDFromHex(userID)
+	if err != nil {
+		http.Error(w, "ID tidak valid", http.StatusBadRequest)
+		return
+	}
+
+	// Decode data JSON dari body request
+	var updatedUser models.User
+	if err := json.NewDecoder(r.Body).Decode(&updatedUser); err != nil {
+		http.Error(w, "Input tidak valid", http.StatusBadRequest)
+		return
+	}
+
+	// Query untuk update user berdasarkan ID
+	update := bson.M{
+		"$set": bson.M{
+			"username":   updatedUser.Username,
+			"role":       updatedUser.Role,
+			"phone":      updatedUser.Phone,
+			"address":    updatedUser.Address,
+			"hired_date": updatedUser.HiredDate,
+		},
+	}
+
+	// Update user di database
+	result, err := config.UserCollection.UpdateOne(context.TODO(), bson.M{"_id": id}, update)
+	if err != nil {
+		http.Error(w, "Gagal memperbarui user", http.StatusInternalServerError)
+		return
+	}
+
+	// Periksa apakah ada perubahan
+	if result.MatchedCount == 0 {
+		http.Error(w, "User tidak ditemukan", http.StatusNotFound)
+		return
+	}
+
+	// Kirim response sukses
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(map[string]string{"message": "User berhasil diperbarui"})
+}
+
+// DeleteUser menghapus data user berdasarkan ID
+func DeleteUser(w http.ResponseWriter, r *http.Request) {
+	// Ambil ID dari URL parameter
+	userID := r.URL.Query().Get("id")
+	if userID == "" {
+		http.Error(w, "ID tidak disediakan", http.StatusBadRequest)
+		return
+	}
+
+	// Convert ID menjadi ObjectID MongoDB
+	id, err := primitive.ObjectIDFromHex(userID)
+	if err != nil {
+		http.Error(w, "ID tidak valid", http.StatusBadRequest)
+		return
+	}
+
+	// Hapus user dari koleksi UserCollection
+	result, err := config.UserCollection.DeleteOne(context.TODO(), bson.M{"_id": id})
+	if err != nil {
+		http.Error(w, "Gagal menghapus user", http.StatusInternalServerError)
+		return
+	}
+
+	// Periksa apakah ada data yang dihapus
+	if result.DeletedCount == 0 {
+		http.Error(w, "User tidak ditemukan", http.StatusNotFound)
+		return
+	}
+
+	// Kirim response sukses
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(map[string]string{"message": "User berhasil dihapus"})
 }
 

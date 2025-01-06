@@ -32,7 +32,6 @@ func InitRoutes() *http.ServeMux {
 	securedRouter := http.NewServeMux()
 
 	// Rute Register
-	// Rute Register
 	securedRouter.Handle("/Register", middleware.AuthMiddleware(middleware.RoleMiddleware("admin", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch r.Method {
 		case http.MethodPost:
@@ -43,30 +42,28 @@ func InitRoutes() *http.ServeMux {
 	}))))
 
 	// // Rute untuk customer
-	// securedRouter.Handle("/customers", middleware.AuthMiddleware(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-	// 	switch r.Method {
-	// 	case http.MethodPost:
-	// 		controllers.AddCustomer(w, r) // Membuat customer baru
-	// 	case http.MethodGet:
-	// 		controllers.GetAllCustomers(w, r) // Mengambil semua data customer
-	// 	default:
-	// 		http.Error(w, "Method Not Allowed", http.StatusMethodNotAllowed)
-	// 	}
-	// })))
+	securedRouter.Handle("/employee", middleware.AuthMiddleware(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		switch r.Method {
+		case http.MethodGet:
+			controllers.GetAllUsers(w, r) // Mengambil semua data customer
+		default:
+			http.Error(w, "Method Not Allowed", http.StatusMethodNotAllowed)
+		}
+	})))
 
-	// // Rute untuk customer berdasarkan ID
-	// securedRouter.Handle("/customer-id", middleware.AuthMiddleware(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-	// 	switch r.Method {
-	// 	case http.MethodGet:
-	// 		controllers.GetCustomerByID(w, r) // Mengambil data customer berdasarkan ID
-	// 	case http.MethodPut:
-	// 		controllers.UpdateCustomer(w, r) // Mengupdate data customer berdasarkan ID
-	// 	case http.MethodDelete:
-	// 		controllers.DeleteCustomer(w, r) // Menghapus data customer berdasarkan ID
-	// 	default:
-	// 		http.Error(w, "Method Not Allowed", http.StatusMethodNotAllowed)
-	// 	}
-	// })))
+	// // Rute untuk Users berdasarkan ID
+	securedRouter.Handle("/employee-id", middleware.AuthMiddleware(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		switch r.Method {
+		case http.MethodGet:
+			controllers.GetUserByID(w, r) // Mengambil data user berdasarkan ID
+		case http.MethodPut:
+			controllers.UpdateUser(w, r) // Mengupdate data user berdasarkan ID
+		case http.MethodDelete:
+			controllers.DeleteUser(w, r) // Menghapus data user berdasarkan ID
+		default:
+			http.Error(w, "Method Not Allowed", http.StatusMethodNotAllowed)
+		}
+	})))
 
 	// // Rute untuk pembayaran
 	// securedRouter.Handle("/create-payment", middleware.AuthMiddleware(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {

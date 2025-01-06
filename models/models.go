@@ -17,6 +17,9 @@ type User struct {
 	Username  string    `json:"username" bson:"username"`
 	Password  string    `json:"password" bson:"password"` // Should be hashed
 	Role      string    `json:"role" bson:"role"`         // e.g., "admin" or "staff"
+	Phone     string    `json:"phone" bson:"phone"`         // Contact number
+	Address   string    `json:"address" bson:"address"`     // Home address
+	HiredDate time.Time `json:"hired_date" bson:"hired_date"` // Date of hiring
 }
 
 // Employee represents an employee in the laundry business
@@ -45,5 +48,4 @@ type Payment struct {
 	Amount      float64   `json:"amount" bson:"amount"`
 	PaymentType string    `json:"payment_type" bson:"payment_type"` // e.g., "cash", "card"
 	Date        time.Time `json:"date" bson:"date"`
-	CreatedAt   time.Time `json:"created_at" bson:"created_at"`
 }

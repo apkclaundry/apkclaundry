@@ -2,22 +2,22 @@ package routes
 
 import (
 	"apkclaundry/controllers"
-	// "apkclaundry/middleware"
+	"apkclaundry/middleware"
 	"net/http"
 )
 
 func InitRoutes() *http.ServeMux {
 	router := http.NewServeMux()
 
-	// Rute Auth
-	router.HandleFunc("/register", func(w http.ResponseWriter, r *http.Request) {
-		switch r.Method {
-		case http.MethodPost:
-			controllers.Register(w, r) // Untuk registrasi staff
-		default:
-			http.Error(w, "Method Not Allowed", http.StatusMethodNotAllowed)
-		}
-	})
+	// // Rute Auth
+	// router.HandleFunc("/register", func(w http.ResponseWriter, r *http.Request) {
+	// 	switch r.Method {
+	// 	case http.MethodPost:
+	// 		controllers.Register(w, r) // Untuk registrasi staff
+	// 	default:
+	// 		http.Error(w, "Method Not Allowed", http.StatusMethodNotAllowed)
+	// 	}
+	// })
 
 	router.HandleFunc("/login", func(w http.ResponseWriter, r *http.Request) {
 		switch r.Method {
@@ -30,6 +30,17 @@ func InitRoutes() *http.ServeMux {
 
 	// Rute dengan AuthMiddleware
 	securedRouter := http.NewServeMux()
+
+	// Rute Register
+	// Rute Register
+	securedRouter.Handle("/Register", middleware.AuthMiddleware(middleware.RoleMiddleware("admin", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		switch r.Method {
+		case http.MethodPost:
+			controllers.Register(w, r) // Membuat data karyawan baru
+		default:
+			http.Error(w, "Method Not Allowed", http.StatusMethodNotAllowed)
+		}
+	}))))
 
 	// // Rute untuk customer
 	// securedRouter.Handle("/customers", middleware.AuthMiddleware(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -67,7 +78,7 @@ func InitRoutes() *http.ServeMux {
 	// 	}
 	// })))
 
-	// // Rute untuk karyawan dengan RoleMiddleware khusus admin
+	// // // Rute untuk karyawan dengan RoleMiddleware khusus admin
 	// securedRouter.Handle("/employees", middleware.RoleMiddleware("admin", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 	// 	switch r.Method {
 	// 	case http.MethodPost:

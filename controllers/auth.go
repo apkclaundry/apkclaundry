@@ -18,7 +18,7 @@ import (
 func Register(w http.ResponseWriter, r *http.Request) {
 	var user models.User
 	if err := json.NewDecoder(r.Body).Decode(&user); err != nil {
-		http.Error(w, "Invalid input", http.StatusBadRequest)
+		http.Error(w, `{"error": "Invalid input"}`, http.StatusBadRequest)
 		return
 	}
 
@@ -26,14 +26,14 @@ func Register(w http.ResponseWriter, r *http.Request) {
 	var existingUser models.User
 	err := config.UserCollection.FindOne(context.TODO(), bson.M{"username": user.Username}).Decode(&existingUser)
 	if err == nil {
-		http.Error(w, "Username already exists", http.StatusBadRequest)
+		http.Error(w, `{"error": "Username already exists"}`, http.StatusBadRequest)
 		return
 	}
 
 	// Hash the password
 	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(user.Password), bcrypt.DefaultCost)
 	if err != nil {
-		http.Error(w, "Failed to hash password", http.StatusInternalServerError)
+		http.Error(w, `{"error": "Failed to hash password"}`, http.StatusInternalServerError)
 		return
 	}
 	user.Password = string(hashedPassword)
@@ -42,15 +42,35 @@ func Register(w http.ResponseWriter, r *http.Request) {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
-	_, err = config.UserCollection.InsertOne(ctx, user)
+	result, err := config.UserCollection.InsertOne(ctx, user)
 	if err != nil {
-		http.Error(w, "Failed to create user", http.StatusInternalServerError)
+		http.Error(w, `{"error": "Failed to create user"}`, http.StatusInternalServerError)
 		return
 	}
 
-	w.WriteHeader(http.StatusCreated)
-	json.NewEncoder(w).Encode(map[string]string{"message": "User registered successfully"})
+	// Retrieve the inserted user including the new ID
+	err = config.UserCollection.FindOne(context.TODO(), bson.M{"_id": result.InsertedID}).Decode(&user)
+	if err != nil {
+		http.Error(w, `{"error": "Failed to retrieve user"}`, http.StatusInternalServerError)
+		return
+	}
+
+	response := map[string]interface{}{
+		"message": "User registered successfully",
+		"user": map[string]interface{}{
+			"id":         user.ID,
+			"username":   user.Username,
+			"role":       user.Role,
+			"phone":      user.Phone,
+			"address":    user.Address,
+			"hired_date": user.HiredDate.Format(time.RFC3339), // ISO 8601 date format
+		},
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(response)
 }
+
 
 // Login handles user authentication and JWT token generation
 func Login(w http.ResponseWriter, r *http.Request) {
@@ -85,5 +105,22 @@ func Login(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	json.NewEncoder(w).Encode(map[string]string{"token": token})
+	// Prepare response
+	response := map[string]interface{}{
+		"message": "Login successful",
+		"token":   token,
+		"user": map[string]interface{}{
+			"id":       user.ID,
+			"username": user.Username,
+			"role":     user.Role,
+			"phone":    user.Phone,
+			"address":  user.Address,
+			"hired_date": user.HiredDate.Format(time.RFC3339), // format tanggal ke dalam format string yang dapat dibaca manusia
+		},
+	}
+
+	w.Header().Set("Content-Type", "application/json") // Set content type to JSON
+	// Return the response as JSON
+	json.NewEncoder(w).Encode(response)
 }
+

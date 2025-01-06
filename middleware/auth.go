@@ -62,6 +62,12 @@ func AuthMiddleware(next http.Handler) http.Handler {
 			return
 		}
 
+		// Check if the user has an "admin" role
+		if claims.Role != "admin" {
+			http.Error(w, "Forbidden: Only admins can access this endpoint", http.StatusForbidden)
+			return
+		}
+
 		// Add user information to the request context for further use
 		r.Header.Set("User-ID", claims.ID)
 		r.Header.Set("Username", claims.Username)
@@ -70,6 +76,7 @@ func AuthMiddleware(next http.Handler) http.Handler {
 		next.ServeHTTP(w, r)
 	})
 }
+
 
 // RoleMiddleware validates user roles
 func RoleMiddleware(role string, next http.Handler) http.Handler {

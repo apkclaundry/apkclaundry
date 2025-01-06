@@ -13,6 +13,7 @@ func EnableCORS(next http.Handler) http.Handler {
         // Daftar origin yang diperbolehkan
         allowedOrigins := map[string]bool{
             "http://127.0.0.1:5500":                      true,
+            "http://127.0.0.1:5502":                      true,
             "https://proyek3-pos.github.io/laundrypos-fe": true,
             "https://proyek3-pos.github.io/swagger":       true,
             "https://apkclaundry.github.io/":          true,

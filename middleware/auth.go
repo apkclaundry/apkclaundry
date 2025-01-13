@@ -38,47 +38,44 @@ func EnableCORS(next http.Handler) http.Handler {
 }
 
 
-
-
 // AuthMiddleware validates JWT tokens
 func AuthMiddleware(next http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		token := r.Header.Get("Authorization")
-		if token == "" {
-			http.Error(w, "Authorization header missing", http.StatusUnauthorized)
-			return
-		}
+    return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+        token := r.Header.Get("Authorization")
+        if token == "" {
+            log.Println("Authorization header missing")
+            http.Error(w, "Authorization header missing", http.StatusUnauthorized)
+            return
+        }
 
-		// Ensure the token starts with "Bearer "
-		if len(token) < 7 || token[:7] != "Bearer " {
-			http.Error(w, "Invalid token format", http.StatusUnauthorized)
-			return
-		}
+        if len(token) < 7 || token[:7] != "Bearer " {
+            log.Println("Invalid token format")
+            http.Error(w, "Invalid token format", http.StatusUnauthorized)
+            return
+        }
 
-		// Extract the token after "Bearer "
-		token = token[7:]
+        token = token[7:]
+        claims, err := utils.ValidateJWT(token)
+        if err != nil {
+            log.Printf("Invalid token: %v", err)
+            http.Error(w, "Invalid token", http.StatusUnauthorized)
+            return
+        }
 
-		// Validate the token
-		claims, err := utils.ValidateJWT(token)
-		if err != nil {
-			http.Error(w, "Invalid token", http.StatusUnauthorized)
-			return
-		}
+        if claims.Role != "admin" {
+            log.Printf("Forbidden access for role: %s", claims.Role)
+            http.Error(w, "Forbidden: Only admins can access this endpoint", http.StatusForbidden)
+            return
+        }
 
-		// Check if the user has an "admin" role
-		if claims.Role != "admin" {
-			http.Error(w, "Forbidden: Only admins can access this endpoint", http.StatusForbidden)
-			return
-		}
+        r.Header.Set("User-ID", claims.ID)
+        r.Header.Set("Username", claims.Username)
+        r.Header.Set("Role", claims.Role)
 
-		// Add user information to the request context for further use
-		r.Header.Set("User-ID", claims.ID)
-		r.Header.Set("Username", claims.Username)
-		r.Header.Set("Role", claims.Role)
-
-		next.ServeHTTP(w, r)
-	})
+        next.ServeHTTP(w, r)
+    })
 }
+
 
 
 // RoleMiddleware validates user roles

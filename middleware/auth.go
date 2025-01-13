@@ -9,23 +9,24 @@ import (
 func EnableCORS(next http.Handler) http.Handler {
     return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
         origin := r.Header.Get("Origin")
-        
+
         // Daftar origin yang diperbolehkan
         allowedOrigins := map[string]bool{
-            "http://127.0.0.1:5500":                      true,
-            "http://127.0.0.1:5502":                      true,
-            "https://proyek3-pos.github.io/laundrypos-fe": true,
-            "https://proyek3-pos.github.io/swagger":       true,
-            "https://apkclaundry.github.io/":          true,
+            "http://127.0.0.1:5500":         true,
+            "http://127.0.0.1:5502":         true,
+            "https://apkclaundry.github.io": true,
         }
 
         // Periksa apakah origin dalam daftar yang diizinkan
         if allowedOrigins[origin] {
             w.Header().Set("Access-Control-Allow-Origin", origin)
+            w.Header().Set("Vary", "Origin") // Tambahkan untuk mencegah cache dari respon berbeda per origin
         }
 
+        // Header CORS lainnya
         w.Header().Set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
         w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization")
+        w.Header().Set("Access-Control-Allow-Credentials", "true") // Jika mendukung kredensial seperti cookie
 
         // Tangani preflight request (OPTIONS)
         if r.Method == http.MethodOptions {
@@ -37,6 +38,7 @@ func EnableCORS(next http.Handler) http.Handler {
         next.ServeHTTP(w, r)
     })
 }
+
 
 // AuthMiddleware validates JWT tokens
 func AuthMiddleware(next http.Handler) http.Handler {

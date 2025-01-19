@@ -51,6 +51,18 @@ type Item struct {
 	Price       float64   `json:"price" bson:"price"`
 }
 
+
+
+type Transaction struct {
+	ID           string  `json:"id" bson:"_id,omitempty"`
+	CustomerName string  `json:"customer_name" bson:"customer_name"`
+	PhoneNumber  string  `json:"phone_number" bson:"phone_number"`
+	ServiceType  string  `json:"service_type" bson:"service_type"`
+	WeightPerKg  float64 `json:"weight_per_kg" bson:"weight_per_kg"`
+	TotalPrice   float64 `json:"total_price" bson:"total_price"`
+}
+
+
 // Payment represents a payment transaction
 type Payment struct {
 	ID          string    `json:"id" bson:"_id,omitempty"`

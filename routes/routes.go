@@ -117,32 +117,57 @@ func InitRoutes() *http.ServeMux {
 		}
 	})))
 
+	// // Rute untuk Stock
+	securedRouter.Handle("/stock", middleware.AuthMiddleware(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		switch r.Method {
+		case http.MethodGet:
+			controllers.GetAllItems(w, r) // Mengambil semua data customer
+		case http.MethodPost:
+			controllers.CreateItem(w, r) // Membuat data karyawan baru
+		default:
+			http.Error(w, "Method Not Allowed", http.StatusMethodNotAllowed)
+		}
+	})))
 
-		// // Rute untuk Stock
-		securedRouter.Handle("/stock", middleware.AuthMiddleware(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			switch r.Method {
-			case http.MethodGet:
-				controllers.GetAllItems(w, r) // Mengambil semua data customer
-			case http.MethodPost:
-				controllers.CreateItem(w, r) // Membuat data karyawan baru
-			default:
-				http.Error(w, "Method Not Allowed", http.StatusMethodNotAllowed)
-			}
-		})))
-	
-		// // Rute untuk Stock berdasarkan ID
-		securedRouter.Handle("/stock-id", middleware.AuthMiddleware(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			switch r.Method {
-			case http.MethodGet:
-				controllers.GetItemByID(w, r) // Mengambil data user berdasarkan ID
-			case http.MethodPut:
-				controllers.UpdateItem(w, r) // Mengupdate data user berdasarkan ID
-			case http.MethodDelete:
-				controllers.DeleteItem(w, r) // Menghapus data user berdasarkan ID
-			default:
-				http.Error(w, "Method Not Allowed", http.StatusMethodNotAllowed)
-			}
-		})))
+	// // Rute untuk Stock berdasarkan ID
+	securedRouter.Handle("/stock-id", middleware.AuthMiddleware(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		switch r.Method {
+		case http.MethodGet:
+			controllers.GetItemByID(w, r) // Mengambil data user berdasarkan ID
+		case http.MethodPut:
+			controllers.UpdateItem(w, r) // Mengupdate data user berdasarkan ID
+		case http.MethodDelete:
+			controllers.DeleteItem(w, r) // Menghapus data user berdasarkan ID
+		default:
+			http.Error(w, "Method Not Allowed", http.StatusMethodNotAllowed)
+		}
+	})))
+
+	// // Rute untuk transaksi
+	securedRouter.Handle("/transaction", middleware.AuthMiddleware(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		switch r.Method {
+		case http.MethodGet:
+			controllers.GetAllTransactions(w, r) // Mengambil semua data customer
+		case http.MethodPost:
+			controllers.CreateTransaction(w, r) // Membuat data karyawan baru
+		default:
+			http.Error(w, "Method Not Allowed", http.StatusMethodNotAllowed)
+		}
+	})))
+
+	// // Rute untuk treansaksi berdasarkan ID
+	securedRouter.Handle("/transaction-id", middleware.AuthMiddleware(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		switch r.Method {
+		case http.MethodGet:
+			controllers.GetTransactionByID(w, r) // Mengambil data user berdasarkan ID
+		case http.MethodPut:
+			controllers.UpdateTransaction(w, r) // Mengupdate data user berdasarkan ID
+		case http.MethodDelete:
+			controllers.DeleteTransaction(w, r) // Menghapus data user berdasarkan ID
+		default:
+			http.Error(w, "Method Not Allowed", http.StatusMethodNotAllowed)
+		}
+	})))
 
 	// // Rute untuk pembayaran
 	// securedRouter.Handle("/create-payment", middleware.AuthMiddleware(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {

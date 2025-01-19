@@ -15,6 +15,7 @@ var CustomerCollection *mongo.Collection
 var EmployeeCollection *mongo.Collection
 var ItemCollection *mongo.Collection
 var SupplierCollection *mongo.Collection
+var TransactionCollection *mongo.Collection
 var ReportCollection *mongo.Collection
 
 // InitMongoDB untuk menginisialisasi koneksi ke MongoDB
@@ -43,6 +44,7 @@ func InitMongoDB() error {
     EmployeeCollection = Client.Database("apkclaundry").Collection("karyawan")
 	ItemCollection = client.Database("apkclaundry").Collection("barang")
 	SupplierCollection = client.Database("apkclaundry").Collection("supplier")
+	TransactionCollection = client.Database("apkclaundry").Collection("transaksi")
 	ReportCollection = client.Database("apkclaundry").Collection("laporan")
 
     return nil

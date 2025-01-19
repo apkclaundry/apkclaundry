@@ -16,6 +16,7 @@ import (
 )
 
 // Register handles user registration
+// Register handles user registration
 func Register(w http.ResponseWriter, r *http.Request) {
 	var user models.User
 	if err := json.NewDecoder(r.Body).Decode(&user); err != nil {
@@ -38,6 +39,9 @@ func Register(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	user.Password = string(hashedPassword)
+
+	// Set hired_date to the current time
+	user.HiredDate = time.Now()
 
 	// Insert the user into the database
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
@@ -75,6 +79,7 @@ func Register(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(response)
 }
+
 
 
 
@@ -222,7 +227,6 @@ func UpdateUser(w http.ResponseWriter, r *http.Request) {
 			"role":       updatedUser.Role,
 			"phone":      updatedUser.Phone,
 			"address":    updatedUser.Address,
-			"hired_date": updatedUser.HiredDate,
 		},
 	}
 

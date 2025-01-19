@@ -33,6 +33,16 @@ type Employee struct {
 	HiredDate time.Time `json:"hired_date" bson:"hired_date"` // Date of hiring
 }
 
+// Supplier represents the supplier model
+type Supplier struct {
+	ID             string 			  `json:"id" bson:"_id,omitempty"`
+	SupplierName   string             `json:"supplier_name" bson:"supplier_name"`
+	PhoneNumber    string             `json:"phone_number" bson:"phone_number"`
+	Address        string             `json:"address" bson:"address"`
+	Email          string             `json:"email" bson:"email"`
+	SuppliedProducts []string         `json:"supplied_products" bson:"supplied_products"`
+}
+
 // Inventory represents a stock item in the laundry
 type Item struct {
 	ID          string    `json:"id" bson:"_id,omitempty"`

@@ -40,8 +40,9 @@ func Register(w http.ResponseWriter, r *http.Request) {
 	}
 	user.Password = string(hashedPassword)
 
-	// Set hired_date to the current time
+	// Set hired_date and salary_date
 	user.HiredDate = time.Now()
+	user.SalaryDate = nil // SalaryDate bisa null
 
 	// Insert the user into the database
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
@@ -57,31 +58,37 @@ func Register(w http.ResponseWriter, r *http.Request) {
 	// Assign generated ID to user
 	user.ID = result.InsertedID.(primitive.ObjectID).Hex()
 
-	// Insert user into the KaryawanCollection
+	// Insert user into the EmployeeCollection
 	_, err = config.EmployeeCollection.InsertOne(ctx, user)
 	if err != nil {
-		http.Error(w, `{"error": "Failed to create karyawan"}`, http.StatusInternalServerError)
+		http.Error(w, `{"error": "Failed to create employee"}`, http.StatusInternalServerError)
 		return
+	}
+
+	// Handle SalaryDate safely
+	var salaryDate string
+	if user.SalaryDate != nil {
+		salaryDate = user.SalaryDate.Format("02/01/2006")
+	} else {
+		salaryDate = ""
 	}
 
 	response := map[string]interface{}{
 		"message": "User registered successfully",
 		"user": map[string]interface{}{
-			"id":         user.ID,
-			"username":   user.Username,
-			"role":       user.Role,
-			"phone":      user.Phone,
-			"address":    user.Address,
-			"hired_date": user.HiredDate.Format(time.RFC3339),
+			"id":          user.ID,
+			"username":    user.Username,
+			"role":        user.Role,
+			"phone":       user.Phone,
+			"address":     user.Address,
+			"hired_date":  user.HiredDate.Format("02/01/2006"),
+			"salary_date": salaryDate,
 		},
 	}
 
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(response)
 }
-
-
-
 
 // Login handles user authentication and JWT token generation
 func Login(w http.ResponseWriter, r *http.Request) {
@@ -121,12 +128,13 @@ func Login(w http.ResponseWriter, r *http.Request) {
 		"message": "Login successful",
 		"token":   token,
 		"user": map[string]interface{}{
-			"id":       user.ID,
-			"username": user.Username,
-			"role":     user.Role,
-			"phone":    user.Phone,
-			"address":  user.Address,
-			"hired_date": user.HiredDate.Format(time.RFC3339), // format tanggal ke dalam format string yang dapat dibaca manusia
+			"id":         user.ID,
+			"username":   user.Username,
+			"role":       user.Role,
+			"phone":      user.Phone,
+			"address":    user.Address,
+			"salary":     user.Salary,
+			"hired_date": user.HiredDate.Format("02/01/2006"), // Format tanggal ke dd/mm/yyyy
 		},
 	}
 
@@ -162,11 +170,43 @@ func GetAllUsers(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Kirim response dengan daftar user
-	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(users)
-}
+	// Format hired_date dan salary_date
+	type UserResponse struct {
+		ID         string  `json:"id"`
+		Username   string  `json:"username"`
+		Role       string  `json:"role"`
+		Phone      string  `json:"phone"`
+		Address    string  `json:"address"`
+		Salary     float64 `json:"salary"`
+		HiredDate  string  `json:"hired_date"`
+		SalaryDate string  `json:"salary_date"`
+	}
 
+	var formattedUsers []UserResponse
+	for _, user := range users {
+		var salaryDate string
+		if user.SalaryDate != nil {
+			salaryDate = user.SalaryDate.Format("02/01/2006")
+		} else {
+			salaryDate = ""
+		}
+
+		formattedUsers = append(formattedUsers, UserResponse{
+			ID:         user.ID,
+			Username:   user.Username,
+			Role:       user.Role,
+			Phone:      user.Phone,
+			Address:    user.Address,
+			Salary:     user.Salary,
+			HiredDate:  user.HiredDate.Format("02/01/2006"),
+			SalaryDate: salaryDate,
+		})
+	}
+
+	// Kirim response
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(formattedUsers)
+}
 
 // GetUserByID mengambil data user berdasarkan ID
 func GetUserByID(w http.ResponseWriter, r *http.Request) {
@@ -192,10 +232,42 @@ func GetUserByID(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Kirim response user yang ditemukan
+	// Handle SalaryDate safely
+	var salaryDate string
+	if user.SalaryDate != nil {
+		salaryDate = user.SalaryDate.Format("02/01/2006")
+	} else {
+		salaryDate = ""
+	}
+
+	// Format response
+	type UserResponse struct {
+		ID         string  `json:"id"`
+		Username   string  `json:"username"`
+		Role       string  `json:"role"`
+		Phone      string  `json:"phone"`
+		Address    string  `json:"address"`
+		Salary     float64 `json:"salary"`
+		SalaryDate string  `json:"salary_date"`
+		HiredDate  string  `json:"hired_date"`
+	}
+
+	formattedUser := UserResponse{
+		ID:         user.ID,
+		Username:   user.Username,
+		Role:       user.Role,
+		Phone:      user.Phone,
+		Address:    user.Address,
+		Salary:     user.Salary,
+		HiredDate:  user.HiredDate.Format("02/01/2006"),
+		SalaryDate: salaryDate,
+	}
+
+	// Kirim response
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(user)
+	json.NewEncoder(w).Encode(formattedUser)
 }
+
 
 // UpdateUser memperbarui data user berdasarkan ID
 func UpdateUser(w http.ResponseWriter, r *http.Request) {
@@ -223,10 +295,12 @@ func UpdateUser(w http.ResponseWriter, r *http.Request) {
 	// Query untuk update user berdasarkan ID
 	update := bson.M{
 		"$set": bson.M{
-			"username":   updatedUser.Username,
-			"role":       updatedUser.Role,
-			"phone":      updatedUser.Phone,
-			"address":    updatedUser.Address,
+			"username":    updatedUser.Username,
+			"role":        updatedUser.Role,
+			"phone":       updatedUser.Phone,
+			"address":     updatedUser.Address,
+			"salary":      updatedUser.Salary,
+			"salary_date": updatedUser.SalaryDate,
 		},
 	}
 
@@ -282,3 +356,36 @@ func DeleteUser(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(map[string]string{"message": "User berhasil dihapus"})
 }
 
+// GetAllEmployeesIDName mengambil semua data karyawan dan hanya mengembalikan id dan nama
+func GetAllEmployeesIDName(w http.ResponseWriter, r *http.Request) {
+	// Query semua karyawan dari MongoDB
+	cursor, err := config.EmployeeCollection.Find(context.TODO(), bson.M{})
+	if err != nil {
+		http.Error(w, "Gagal mengambil data karyawan", http.StatusInternalServerError)
+		return
+	}
+	defer cursor.Close(context.TODO())
+
+	// Slice untuk menyimpan hasil query
+	type EmployeeResponse struct {
+		ID   string `json:"id"`
+		Name string `json:"name"`
+	}
+
+	var employees []EmployeeResponse
+	for cursor.Next(context.TODO()) {
+		var employee models.User // Menggunakan models.User karena data karyawan disimpan dalam User
+		if err := cursor.Decode(&employee); err != nil {
+			http.Error(w, "Gagal membaca data karyawan", http.StatusInternalServerError)
+			return
+		}
+		employees = append(employees, EmployeeResponse{
+			ID:   employee.ID,
+			Name: employee.Username,
+		})
+	}
+
+	// Kirim response dengan daftar karyawan yang sudah diformat
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(employees)
+}

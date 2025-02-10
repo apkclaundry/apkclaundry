@@ -169,3 +169,44 @@ func DeleteSupplier(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(map[string]string{"message": "Supplier deleted successfully"})
 }
+
+func AddSupplierTransaction(w http.ResponseWriter, r *http.Request) {
+	// Ambil ID Supplier dari query parameter
+	supplierID := r.URL.Query().Get("supplier_id")
+	if supplierID == "" {
+		http.Error(w, `{"error": "Supplier ID tidak disediakan"}`, http.StatusBadRequest)
+		return
+	}
+
+	// Konversi supplierID ke ObjectID
+	id, err := primitive.ObjectIDFromHex(supplierID)
+	if err != nil {
+		http.Error(w, `{"error": "ID Supplier tidak valid"}`, http.StatusBadRequest)
+		return
+	}
+
+	// Decode data transaksi dari request body
+	var transaction models.SupplierTransaction
+	if err := json.NewDecoder(r.Body).Decode(&transaction); err != nil {
+		http.Error(w, `{"error": "Input tidak valid"}`, http.StatusBadRequest)
+		return
+	}
+
+	// Set tanggal transaksi dan ID transaksi unik
+	transaction.TransactionID = primitive.NewObjectID().Hex()
+	transaction.Date = time.Now()
+
+	// Update supplier dengan menambahkan transaksi baru
+	update := bson.M{"$push": bson.M{"transactions": transaction}}
+	_, err = config.SupplierCollection.UpdateOne(context.TODO(), bson.M{"_id": id}, update)
+	if err != nil {
+		http.Error(w, `{"error": "Gagal menambahkan transaksi"}`, http.StatusInternalServerError)
+		return
+	}
+
+	// Kirim respons sukses
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(map[string]string{"message": "Transaksi berhasil ditambahkan"})
+}
+
+

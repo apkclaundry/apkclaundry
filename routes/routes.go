@@ -45,7 +45,16 @@ func InitRoutes() *http.ServeMux {
 	securedRouter.Handle("/employee", middleware.AuthMiddleware(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch r.Method {
 		case http.MethodGet:
-			controllers.GetAllUsers(w, r) // Mengambil semua data customer
+			controllers.GetAllUsers(w, r) // Mengambil semua data users
+		default:
+			http.Error(w, "Method Not Allowed", http.StatusMethodNotAllowed)
+		}
+	})))
+
+	securedRouter.Handle("/employeename", middleware.AuthMiddleware(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		switch r.Method {
+		case http.MethodGet:
+			controllers.GetAllEmployeesIDName(w, r) // Mengambil semua data users
 		default:
 			http.Error(w, "Method Not Allowed", http.StatusMethodNotAllowed)
 		}
@@ -86,6 +95,33 @@ func InitRoutes() *http.ServeMux {
 			controllers.UpdateCustomer(w, r) // Mengupdate data user berdasarkan ID
 		case http.MethodDelete:
 			controllers.DeleteCustomer(w, r) // Menghapus data user berdasarkan ID
+		default:
+			http.Error(w, "Method Not Allowed", http.StatusMethodNotAllowed)
+		}
+	})))
+
+	securedRouter.Handle("/customers-name", middleware.AuthMiddleware(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		switch r.Method {
+		case http.MethodGet:
+			controllers.GetAllCustomersIDName(w, r) // Mengambil data user berdasarkan ID
+		default:
+			http.Error(w, "Method Not Allowed", http.StatusMethodNotAllowed)
+		}
+	})))
+
+	securedRouter.Handle("/name-id", middleware.AuthMiddleware(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		switch r.Method {
+		case http.MethodGet:
+			controllers.GetCustomerNameByID(w, r) // Mengambil nama customer berdasarkan ID
+		default:
+			http.Error(w, "Method Not Allowed", http.StatusMethodNotAllowed)
+		}
+	})))
+
+	securedRouter.Handle("/supplier/transaction", middleware.AuthMiddleware(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		switch r.Method {
+		case http.MethodPost:
+			controllers.AddSupplierTransaction(w, r) // Mengambil nama customer berdasarkan ID
 		default:
 			http.Error(w, "Method Not Allowed", http.StatusMethodNotAllowed)
 		}

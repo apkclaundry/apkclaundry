@@ -19,6 +19,8 @@ type User struct {
 	Role      string    `json:"role" bson:"role"`         // e.g., "admin" or "staff"
 	Phone     string    `json:"phone" bson:"phone"`         // Contact number
 	Address   string    `json:"address" bson:"address"`     // Home address
+	Salary    float64   `json:"salary" bson:"salary"`       // Salary field
+	SalaryDate *time.Time `bson:"salary_date,omitempty" json:"salary_date,omitempty"` // ubah menjadi pointer agar bisa null
 	HiredDate time.Time `json:"hired_date" bson:"hired_date"` // Date of hiring
 }
 
@@ -35,13 +37,32 @@ type Employee struct {
 
 // Supplier represents the supplier model
 type Supplier struct {
-	ID             string 			  `json:"id" bson:"_id,omitempty"`
-	SupplierName   string             `json:"supplier_name" bson:"supplier_name"`
-	PhoneNumber    string             `json:"phone_number" bson:"phone_number"`
-	Address        string             `json:"address" bson:"address"`
-	Email          string             `json:"email" bson:"email"`
-	SuppliedProducts []string         `json:"supplied_products" bson:"supplied_products"`
+	ID               string                 `json:"id" bson:"_id,omitempty"`
+	SupplierName     string                 `json:"supplier_name" bson:"supplier_name"`
+	PhoneNumber      string                 `json:"phone_number" bson:"phone_number"`
+	Address         string                  `json:"address" bson:"address"`
+	Email           string                  `json:"email" bson:"email"`
+	SuppliedProducts []string               `json:"supplied_products" bson:"supplied_products"`
+	Transactions     []SupplierTransaction  `json:"transactions" bson:"transactions"`
 }
+
+
+type SupplierTransaction struct {
+	TransactionID string    `json:"transaction_id" bson:"transaction_id"`
+	TotalAmount   float64   `json:"total_amount" bson:"total_amount"`
+	PaymentMethod string    `json:"payment_method" bson:"payment_method"`
+	Date          time.Time `json:"date" bson:"date"`
+	ItemsPurchased []ItemPurchased `json:"items_purchased" bson:"items_purchased"`
+}
+
+// ItemPurchased represents an item purchased from a supplier
+type ItemPurchased struct {
+	ItemName   string  `json:"item_name" bson:"item_name"`
+	Quantity   int     `json:"quantity" bson:"quantity"`
+	UnitPrice  float64 `json:"unit_price" bson:"unit_price"`
+	TotalPrice float64 `json:"total_price" bson:"total_price"`
+}
+
 
 // Inventory represents a stock item in the laundry
 type Item struct {
@@ -54,12 +75,15 @@ type Item struct {
 
 
 type Transaction struct {
-	ID           string  `json:"id" bson:"_id,omitempty"`
-	CustomerName string  `json:"customer_name" bson:"customer_name"`
-	PhoneNumber  string  `json:"phone_number" bson:"phone_number"`
-	ServiceType  string  `json:"service_type" bson:"service_type"`
-	WeightPerKg  float64 `json:"weight_per_kg" bson:"weight_per_kg"`
-	TotalPrice   float64 `json:"total_price" bson:"total_price"`
+	ID                      string    `json:"id" bson:"_id,omitempty"`
+	CustomerName            string    `json:"customer_name" bson:"customer_name"`
+	PhoneNumber             string    `json:"phone_number" bson:"phone_number"`
+	ServiceType             string    `json:"service_type" bson:"service_type"`
+	WeightPerKg             float64   `json:"weight_per_kg" bson:"weight_per_kg"`
+	TotalPrice              float64   `json:"total_price" bson:"total_price"`
+	PaymentMethod           string    `json:"payment_method" bson:"payment_method"`
+	TransactionDate         time.Time `json:"-" bson:"transaction_date"` // Tidak di-export ke JSON
+	TransactionDateFormatted string    `json:"transaction_date" bson:"-"` // Hanya untuk respons JSON
 }
 
 

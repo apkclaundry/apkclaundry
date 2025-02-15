@@ -205,6 +205,32 @@ func InitRoutes() *http.ServeMux {
 		}
 	})))
 
+	// Rute untuk transaksi stok (semua data)
+	securedRouter.Handle("/transaksi-stok", middleware.AuthMiddleware(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		switch r.Method {
+		case http.MethodGet:
+			controllers.GetStockTransactions(w, r) // Mengambil semua data transaksi stok
+		case http.MethodPost:
+			controllers.CreateStockTransaction(w, r) // Membuat transaksi stok baru
+		default:
+			http.Error(w, "Method Not Allowed", http.StatusMethodNotAllowed)
+		}
+	})))
+
+	// Rute untuk transaksi stok berdasarkan ID
+	securedRouter.Handle("/transaksi-stok-id", middleware.AuthMiddleware(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		switch r.Method {
+		case http.MethodGet:
+			controllers.GetStockTransactionByID(w, r) // Mengambil transaksi stok berdasarkan ID
+		case http.MethodPut:
+			controllers.UpdateStockTransaction(w, r) // Mengupdate transaksi stok berdasarkan ID
+		case http.MethodDelete:
+			controllers.DeleteStockTransaction(w, r) // Menghapus transaksi stok berdasarkan ID
+		default:
+			http.Error(w, "Method Not Allowed", http.StatusMethodNotAllowed)
+		}
+	})))
+
 	// // Rute untuk pembayaran
 	// securedRouter.Handle("/create-payment", middleware.AuthMiddleware(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 	// 	switch r.Method {

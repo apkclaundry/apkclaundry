@@ -63,6 +63,16 @@ type ItemPurchased struct {
 	TotalPrice float64 `json:"total_price" bson:"total_price"`
 }
 
+// StockTransaction represents a stock transaction (usage/purchase)
+type StockTransaction struct {
+	IDTransaction string    `json:"id_transaksi" bson:"id_transaksi"`
+	IDItem        string    `json:"id_barang" bson:"id_barang"`
+	Date          time.Time `json:"tanggal" bson:"tanggal"`
+	TransactionType string  `json:"jenis_transaksi" bson:"jenis_transaksi"`
+	Quantity      int       `json:"jumlah" bson:"jumlah"`
+	StockAfter    int       `json:"stok_setelah" bson:"stok_setelah"`
+}
+
 
 // Inventory represents a stock item in the laundry
 type Item struct {

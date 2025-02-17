@@ -78,7 +78,7 @@ type ItemPurchased struct {
 type ItemTransaction struct {
 	ID            string    `json:"id" bson:"_id,omitempty"`
 	ItemID        string    `json:"item_id" bson:"item_id"`
-	ItemName   string  `json:"item_name" bson:"item_name"`
+	ItemName   	  string  `json:"item_name" bson:"item_name"`
 	Date          time.Time `json:"date" bson:"date"`
 	TransactionType string  `json:"transaction_type" bson:"transaction_type"` // "Pemakaian" or "Pembelian"
 	Quantity      int       `json:"quantity" bson:"quantity"`

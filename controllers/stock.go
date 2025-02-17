@@ -3,6 +3,7 @@ package controllers
 import (
 	"context"
 	"encoding/json"
+	"log"
 	"net/http"
 	"time"
 
@@ -172,8 +173,14 @@ func DeleteItemTransaction(w http.ResponseWriter, r *http.Request) {
 }
 
 // GetItemTransactions retrieves item transactions with only selected fields (id, itemid, itemname)
+// Fungsi untuk memvalidasi ObjectID
+func IsValidObjectID(id string) bool {
+	return primitive.IsValidObjectID(id)
+}
+
+// Fungsi untuk mendapatkan transaksi item
 func GetItemTransactions(w http.ResponseWriter, r *http.Request) {
-	// Query to find all item transactions
+	// Query untuk mengambil semua transaksi item
 	cursor, err := config.ItemTransactionCollection.Find(context.TODO(), bson.M{})
 	if err != nil {
 		http.Error(w, "Failed to fetch item transactions", http.StatusInternalServerError)
@@ -181,34 +188,44 @@ func GetItemTransactions(w http.ResponseWriter, r *http.Request) {
 	}
 	defer cursor.Close(context.TODO())
 
-	// Define a struct for the response
+	// Define struct untuk response
 	var transactions []struct {
 		ID       primitive.ObjectID `bson:"_id"`
-		ItemID   primitive.ObjectID `bson:"item_id"`
+		ItemID   string             `bson:"item_id"` // Mengubah item_id menjadi string
 		ItemName string             `bson:"item_name"`
 	}
 
-	// Iterate over the cursor and decode only the selected fields
+	// Mulai iterasi cursor dan decode hanya field yang dipilih
 	for cursor.Next(context.TODO()) {
 		var transaction struct {
 			ID       primitive.ObjectID `bson:"_id"`
-			ItemID   primitive.ObjectID `bson:"item_id"`
+			ItemID   string             `bson:"item_id"` // Mengubah item_id menjadi string
 			ItemName string             `bson:"item_name"`
 		}
 		if err := cursor.Decode(&transaction); err != nil {
+			log.Printf("Error decoding transaction: %v", err)
 			http.Error(w, "Failed to read transaction data", http.StatusInternalServerError)
 			return
 		}
+
+		// Log nilai item_id untuk debugging
+		log.Printf("Decoded item_id: %v", transaction.ItemID)
+
+		// Menambahkan item ke dalam daftar transaksi
 		transactions = append(transactions, transaction)
 	}
 
-	// Check if no transactions were found
+	// Jika tidak ada transaksi yang ditemukan
 	if len(transactions) == 0 {
 		http.Error(w, "No transactions found", http.StatusNotFound)
 		return
 	}
 
-	// Send the response
+	// Kirimkan response
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(transactions)
+	if err := json.NewEncoder(w).Encode(transactions); err != nil {
+		log.Printf("Error encoding response: %v", err)
+		http.Error(w, "Failed to encode response", http.StatusInternalServerError)
+		return
+	}
 }

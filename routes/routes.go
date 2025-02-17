@@ -179,6 +179,16 @@ func InitRoutes() *http.ServeMux {
 		}
 	})))
 
+	// // Rute untuk Stock berdasarkan ID
+	securedRouter.Handle("/item-name", middleware.AuthMiddleware(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		switch r.Method {
+		case http.MethodGet:
+			controllers.GetItemTransactions(w, r) // Mengambil data user berdasarkan ID
+		default:
+			http.Error(w, "Method Not Allowed", http.StatusMethodNotAllowed)
+		}
+	})))
+
 	// // Rute untuk transaksi
 	securedRouter.Handle("/transaction", middleware.AuthMiddleware(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch r.Method {

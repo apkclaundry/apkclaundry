@@ -1,6 +1,10 @@
 package models
 
-import "time"
+import (
+	"time"
+
+	"go.mongodb.org/mongo-driver/bson/primitive"
+)
 
 // Customer represents a laundry customer
 type Customer struct {
@@ -37,7 +41,7 @@ type Employee struct {
 
 // Supplier represents the supplier model
 type Supplier struct {
-	ID               string                 `json:"id" bson:"_id,omitempty"`
+	ID               primitive.ObjectID                 `json:"id" bson:"_id,omitempty"`
 	SupplierName     string                 `json:"supplier_name" bson:"supplier_name"`
 	PhoneNumber      string                 `json:"phone_number" bson:"phone_number"`
 	Address         string                  `json:"address" bson:"address"`
@@ -52,7 +56,12 @@ type SupplierTransaction struct {
 	TotalAmount   float64   `json:"total_amount" bson:"total_amount"`
 	PaymentMethod string    `json:"payment_method" bson:"payment_method"`
 	Date          time.Time `json:"date" bson:"date"`
-	ItemsPurchased []ItemPurchased `json:"items_purchased" bson:"items_purchased"`
+	ItemsPurchased []struct {
+		ItemName   string  `json:"item_name" bson:"item_name"`
+		Quantity   int     `json:"quantity" bson:"quantity"`
+		UnitPrice  float64 `json:"unit_price" bson:"unit_price"`
+		TotalPrice float64 `json:"total_price" bson:"total_price"`
+	} `json:"items_purchased" bson:"items_purchased"`
 }
 
 // ItemPurchased represents an item purchased from a supplier
@@ -63,15 +72,19 @@ type ItemPurchased struct {
 	TotalPrice float64 `json:"total_price" bson:"total_price"`
 }
 
-// StockTransaction represents a stock transaction (usage/purchase)
-type StockTransaction struct {
-	IDTransaction string    `json:"id_transaksi" bson:"id_transaksi"`
-	IDItem        string    `json:"id_barang" bson:"id_barang"`
-	Date          time.Time `json:"tanggal" bson:"tanggal"`
-	TransactionType string  `json:"jenis_transaksi" bson:"jenis_transaksi"`
-	Quantity      int       `json:"jumlah" bson:"jumlah"`
-	StockAfter    int       `json:"stok_setelah" bson:"stok_setelah"`
+
+
+// ItemTransaction represents a stock transaction (usage or purchase)
+type ItemTransaction struct {
+	ID            string    `json:"id" bson:"_id,omitempty"`
+	ItemID        string    `json:"item_id" bson:"item_id"`
+	ItemName   string  `json:"item_name" bson:"item_name"`
+	Date          time.Time `json:"date" bson:"date"`
+	TransactionType string  `json:"transaction_type" bson:"transaction_type"` // "Pemakaian" or "Pembelian"
+	Quantity      int       `json:"quantity" bson:"quantity"`
+	StockAfter    int       `json:"stock_after" bson:"stock_after"`
 }
+
 
 
 // Inventory represents a stock item in the laundry

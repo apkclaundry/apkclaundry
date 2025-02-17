@@ -205,27 +205,27 @@ func InitRoutes() *http.ServeMux {
 		}
 	})))
 
-	// Rute untuk transaksi stok (semua data)
-	securedRouter.Handle("/transaksi-stok", middleware.AuthMiddleware(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	// Rute untuk transaksi item
+	securedRouter.Handle("/item-transaction", middleware.AuthMiddleware(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch r.Method {
 		case http.MethodGet:
-			controllers.GetStockTransactions(w, r) // Mengambil semua data transaksi stok
+			controllers.GetAllItemTransactions(w, r) // Mengambil semua transaksi item
 		case http.MethodPost:
-			controllers.CreateStockTransaction(w, r) // Membuat transaksi stok baru
+			controllers.CreateItemTransaction(w, r) // Membuat transaksi item baru
 		default:
 			http.Error(w, "Method Not Allowed", http.StatusMethodNotAllowed)
 		}
 	})))
 
-	// Rute untuk transaksi stok berdasarkan ID
-	securedRouter.Handle("/transaksi-stok-id", middleware.AuthMiddleware(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	// Rute untuk transaksi item berdasarkan ID
+	securedRouter.Handle("/item-transaction-id", middleware.AuthMiddleware(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch r.Method {
 		case http.MethodGet:
-			controllers.GetStockTransactionByID(w, r) // Mengambil transaksi stok berdasarkan ID
+			controllers.GetItemTransactionByID(w, r) // Mengambil transaksi item berdasarkan ID
 		case http.MethodPut:
-			controllers.UpdateStockTransaction(w, r) // Mengupdate transaksi stok berdasarkan ID
+			controllers.UpdateItemTransaction(w, r) // Mengupdate transaksi item berdasarkan ID
 		case http.MethodDelete:
-			controllers.DeleteStockTransaction(w, r) // Menghapus transaksi stok berdasarkan ID
+			controllers.DeleteItemTransaction(w, r) // Menghapus transaksi item berdasarkan ID
 		default:
 			http.Error(w, "Method Not Allowed", http.StatusMethodNotAllowed)
 		}

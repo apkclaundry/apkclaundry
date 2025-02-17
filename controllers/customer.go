@@ -35,7 +35,7 @@ func CreateCustomer(w http.ResponseWriter, r *http.Request) {
 	customer.ID = result.InsertedID.(primitive.ObjectID).Hex()
 
 	response := map[string]interface{}{
-		"message": "Customer created successfully",
+		"message":  "Customer created successfully",
 		"customer": customer,
 	}
 
@@ -81,13 +81,15 @@ func GetAllCustomersIDName(w http.ResponseWriter, r *http.Request) {
 	defer cursor.Close(context.TODO())
 
 	var customers []struct {
-		ID   string `json:"id"`
-		Name string `json:"name"`
+		ID    string `json:"id"`
+		Name  string `json:"name"`
+		Phone string `json:"phone"`
 	}
 	for cursor.Next(context.TODO()) {
 		var customer struct {
-			ID   primitive.ObjectID `bson:"_id"`
-			Name string             `bson:"name"`
+			ID    primitive.ObjectID `bson:"_id"`
+			Name  string             `bson:"name"`
+			Phone string             `json:"phone"`
 		}
 		if err := cursor.Decode(&customer); err != nil {
 			http.Error(w, "Failed to read customer data", http.StatusInternalServerError)
@@ -96,11 +98,13 @@ func GetAllCustomersIDName(w http.ResponseWriter, r *http.Request) {
 
 		// Konversi ObjectID ke string
 		customers = append(customers, struct {
-			ID   string `json:"id"`
-			Name string `json:"name"`
+			ID    string `json:"id"`
+			Name  string `json:"name"`
+			Phone string `json:"phone"`
 		}{
 			ID:   customer.ID.Hex(),
 			Name: customer.Name,
+			Phone: customer.Phone,
 		})
 	}
 
@@ -112,7 +116,6 @@ func GetAllCustomersIDName(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(customers)
 }
-
 
 // GetCustomerByID retrieves a customer by their ID
 func GetCustomerByID(w http.ResponseWriter, r *http.Request) {
@@ -155,6 +158,7 @@ func GetCustomerNameByID(w http.ResponseWriter, r *http.Request) {
 
 	var result struct {
 		Name string `json:"name"`
+		Phone string `json:"phone"`
 	}
 
 	err = config.CustomerCollection.FindOne(context.TODO(), bson.M{"_id": id}).Decode(&result)

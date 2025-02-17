@@ -170,3 +170,45 @@ func DeleteItemTransaction(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(map[string]string{"message": "Transaction deleted successfully"})
 }
+
+// GetItemTransactions retrieves item transactions with only selected fields (id, itemid, itemname)
+func GetItemTransactions(w http.ResponseWriter, r *http.Request) {
+	// Query to find all item transactions
+	cursor, err := config.ItemTransactionCollection.Find(context.TODO(), bson.M{})
+	if err != nil {
+		http.Error(w, "Failed to fetch item transactions", http.StatusInternalServerError)
+		return
+	}
+	defer cursor.Close(context.TODO())
+
+	// Define a struct for the response
+	var transactions []struct {
+		ID       primitive.ObjectID `bson:"_id"`
+		ItemID   primitive.ObjectID `bson:"item_id"`
+		ItemName string             `bson:"item_name"`
+	}
+
+	// Iterate over the cursor and decode only the selected fields
+	for cursor.Next(context.TODO()) {
+		var transaction struct {
+			ID       primitive.ObjectID `bson:"_id"`
+			ItemID   primitive.ObjectID `bson:"item_id"`
+			ItemName string             `bson:"item_name"`
+		}
+		if err := cursor.Decode(&transaction); err != nil {
+			http.Error(w, "Failed to read transaction data", http.StatusInternalServerError)
+			return
+		}
+		transactions = append(transactions, transaction)
+	}
+
+	// Check if no transactions were found
+	if len(transactions) == 0 {
+		http.Error(w, "No transactions found", http.StatusNotFound)
+		return
+	}
+
+	// Send the response
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(transactions)
+}
